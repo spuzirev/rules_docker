@@ -121,7 +121,7 @@ def incremental_load(ctx, images, output,
     # Import the config and the subset of layers not present
     # in the daemon.
     load_statements += [
-        "import_config '%s' %s" % (
+        "(import_config '%s' %s) &" % (
             _get_runfile_path(ctx, image["config"]),
             " ".join([
               "'%s' '%s'" % (
@@ -133,7 +133,7 @@ def incremental_load(ctx, images, output,
     # Now tag the imported config with the specified tag.
     tag_reference = tag if not stamp else tag.replace("{", "${")
     tag_statements += [
-        "tag_layer \"%s\" '%s'" % (
+        "(tag_layer \"%s\" '%s') &" % (
             # Turn stamp variable references into bash variables.
             # It is notable that the only legal use of '{' in a
             # tag would be for stamp variables, '$' is not allowed.
@@ -144,6 +144,9 @@ def incremental_load(ctx, images, output,
       run_statements += [
           "docker run %s %s \"$@\"" % (run_flags, tag_reference)
       ]
+
+  load_statements.append("wait")
+  tag_statements.append("wait")
 
   ctx.template_action(
       template = ctx.file.incremental_load_template,
